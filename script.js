@@ -24,7 +24,6 @@ const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
 
 let bricks = [];
-
 let score = 0;
 let lives = 3;
 let level = 1;
@@ -33,6 +32,11 @@ let rightPressed = false;
 let leftPressed = false;
 
 const particles = [];
+
+const powerUpWidth = 40;
+const powerUpHeight = 10;
+const powerUpColors = ['#ff0000', '#00ff00', '#0000ff'];
+let powerUps = [];
 
 document.addEventListener('keydown', keyDownHandler, false);
 document.addEventListener('keyup', keyUpHandler, false);
@@ -58,7 +62,7 @@ function initializeBricks() {
   for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
-      bricks[c][r] = { x: 0, y: 0, status: 1 };
+      bricks[c][r] = { x: 0, y: 0, status: 1, powerUp: Math.random() < 0.1 ? Math.floor(Math.random() * 3) : -1 };
     }
   }
 }
@@ -119,6 +123,14 @@ function gameLoop() {
           brick.status = 0;
           score++;
           createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
+
+          if (brick.powerUp !== -1) {
+            powerUps.push({
+              x: brick.x + brickWidth / 2 - powerUpWidth / 2,
+              y: brick.y + brickHeight / 2 - powerUpHeight / 2,
+              type: brick.powerUp
+            });
+          }
         }
       }
     }
@@ -137,6 +149,8 @@ function gameLoop() {
     initializeBricks();
   }
 
+  updatePowerUps();
+
   // Render game elements
   drawPaddle();
   drawBall();
@@ -144,6 +158,7 @@ function gameLoop() {
   drawScore();
   drawLives();
   drawLevel();
+  drawPowerUps();
 
   updateParticles();
   drawParticles();
@@ -248,6 +263,49 @@ function updateParticles() {
 function drawParticles() {
   for (let i = 0; i < particles.length; i++) {
     particles[i].draw();
+  }
+}
+
+function updatePowerUps() {
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    const powerUp = powerUps[i];
+    powerUp.y += 2;
+
+    if (
+      powerUp.y > canvas.height - paddleHeight &&
+      powerUp.x > paddleX &&
+      powerUp.x < paddleX + paddleWidth
+    ) {
+      activatePowerUp(powerUp.type);
+      powerUps.splice(i, 1);
+    } else if (powerUp.y > canvas.height) {
+      powerUps.splice(i, 1);
+    }
+  }
+}
+
+function activatePowerUp(type) {
+  switch (type) {
+    case 0: // Expand Paddle
+      paddleWidth += 20;
+      break;
+    case 1: // Sticky Paddle
+      // Implement sticky paddle logic
+      break;
+    case 2: // Multi-Ball
+      // Implement multi-ball logic
+      break;
+  }
+}
+
+function drawPowerUps() {
+  for (let i = 0; i < powerUps.length; i++) {
+    const powerUp = powerUps[i];
+    ctx.beginPath();
+    ctx.rect(powerUp.x, powerUp.y, powerUpWidth, powerUpHeight);
+    ctx.fillStyle = powerUpColors[powerUp.type];
+    ctx.fill();
+    ctx.closePath();
   }
 }
 
