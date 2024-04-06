@@ -12,8 +12,8 @@ let paddleX = (canvas.width - paddleWidth) / 2;
 const ballRadius = 5;
 let ballX = canvas.width / 2;
 let ballY = canvas.height - paddleHeight - ballRadius;
-let ballSpeedX = 2;
-let ballSpeedY = -2;
+let ballSpeedX = 4;
+let ballSpeedY = -4;
 
 const brickRowCount = 5;
 const brickColumnCount = 9;
@@ -53,15 +53,15 @@ let ballTrailParticles = [];
 let shakeDuration = 0;
 
 function showMainMenu() {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '40px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Breakout Game', canvas.width / 2, canvas.height / 2 - 50);
-    ctx.font = '20px Arial';
-    ctx.fillText('Click to Start', canvas.width / 2, canvas.height / 2 + 50);
-  }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#fff';
+  ctx.font = '40px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Breakout Game', canvas.width / 2, canvas.height / 2 - 50);
+  ctx.font = '20px Arial';
+  ctx.fillText('Click to Start', canvas.width / 2, canvas.height / 2 + 50);
+}
 
 function updatePaddlePosition() {
   paddleX = mouseX - paddleWidth / 2;
@@ -69,8 +69,8 @@ function updatePaddlePosition() {
 }
 
 function updateBallSpeed() {
-  const maxSpeed = 5;
-  const speedIncrease = 0.001;
+  const maxSpeed = 8;
+  const speedIncrease = 0.02;
   ballSpeedX += speedIncrease * Math.sign(ballSpeedX);
   ballSpeedY += speedIncrease * Math.sign(ballSpeedY);
   ballSpeedX = Math.min(maxSpeed, Math.max(-maxSpeed, ballSpeedX));
@@ -145,131 +145,139 @@ function initializeBricks() {
 }
 
 function gameLoop() {
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-    if (gameState === 'menu') {
-      showMainMenu();
-      requestAnimationFrame(gameLoop); // Add this line
-      return;
+  // Clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (gameState === 'menu') {
+    showMainMenu();
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  // Update game state
+  updatePaddlePosition();
+  updateBallSpeed();
+
+  for (let i = 0; i < balls.length; i++) {
+    const ball = balls[i];
+    ball.x += ball.speedX;
+    ball.y += ball.speedY;
+
+    if (ball.x + ball.speedX > canvas.width - ballRadius || ball.x + ball.speedX < ballRadius) {
+      ball.speedX = -ball.speedX;
     }
-  
-    // Update game state
-    updatePaddlePosition();
-    updateBallSpeed();
-  
-    for (let i = 0; i < balls.length; i++) {
-      const ball = balls[i];
-      ball.x += ball.speedX;
-      ball.y += ball.speedY;
-  
-      if (ball.x + ball.speedX > canvas.width - ballRadius || ball.x + ball.speedX < ballRadius) {
-        ball.speedX = -ball.speedX;
-      }
-      if (ball.y + ball.speedY < ballRadius) {
+    if (ball.y + ball.speedY < ballRadius) {
+      ball.speedY = -ball.speedY;
+    }
+
+    if (ball.y + ball.speedY > canvas.height - ballRadius - paddleHeight) {
+      if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
         ball.speedY = -ball.speedY;
-      }
-  
-      if (ball.y + ball.speedY > canvas.height - ballRadius - paddleHeight) {
-        if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
-          ball.speedY = -ball.speedY;
-          playSound(paddleHitSound);
-          if (stickyPaddle) {
-            ball.speedX = 0;
-            ball.speedY = 0;
+        playSound(paddleHitSound);
+        if (stickyPaddle) {
+          ball.speedX = 0;
+          ball.speedY = 0;
+        }
+      } else {
+        balls.splice(i, 1);
+        i--;
+        if (balls.length === 0) {
+          lives--;
+          if (lives === 0) {
+            // Game over condition
+            alert('Game Over');
+            document.location.reload();
+            clearInterval(interval);
+          } else {
+            // Reset ball position
+            createBall();
           }
-        } else {
-          balls.splice(i, 1);
-          i--;
-          if (balls.length === 0) {
-            lives--;
-            if (lives === 0) {
-              // Game over condition
-              alert('Game Over');
-              document.location.reload();
-              clearInterval(interval);
-            } else {
-              // Reset ball position
-              createBall();
-            }        }
         }
       }
-  
-      for (let c = 0; c < brickColumnCount; c++) {
-        for (let r = 0; r < brickRowCount; r++) {
-          const brick = bricks[c][r];
-          if (brick.status > 0) {
-            if (
-              ball.x > brick.x &&
-              ball.x < brick.x + brickWidth &&
-              ball.y > brick.y &&
-              ball.y < brick.y + brickHeight
-            ) {
-              ball.speedY = -ball.speedY;
-              brick.status--;
-              if (brick.status === 0) {
-                score++;
-                createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
-                if (brick.powerUp !== -1) {
-                  powerUps.push({
-                    x: brick.x + brickWidth / 2 - powerUpWidth / 2,
-                    y: brick.y + brickHeight / 2 - powerUpHeight / 2,
-                    type: brick.powerUp
-                  });
-                }
+    }
+
+    for (let c = 0; c < brickColumnCount; c++) {
+      for (let r = 0; r < brickRowCount; r++) {
+        const brick = bricks[c][r];
+        if (brick.status > 0) {
+          if (
+            ball.x > brick.x &&
+            ball.x < brick.x + brickWidth &&
+            ball.y > brick.y &&
+            ball.y < brick.y + brickHeight
+          ) {
+            ball.speedY = -ball.speedY;
+            brick.status--;
+            if (brick.status === 0) {
+              score++;
+              createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
+              if (brick.powerUp !== -1) {
+                powerUps.push({
+                  x: brick.x + brickWidth / 2 - powerUpWidth / 2,
+                  y: brick.y + brickHeight / 2 - powerUpHeight / 2,
+                  type: brick.powerUp
+                });
               }
-              playSound(brickHitSound);
-              shakeScreen();
             }
-          }      }
+            playSound(brickHitSound);
+            shakeScreen();
+          }
+        }
       }
     }
-  
-    if (score === brickRowCount * brickColumnCount) {
-      level++;
-      score = 0;
-      // Reset ball position
-      balls = [];
-      createBall();
-      // Reset bricks
-      initializeBricks();
-    }
-  
-    updatePowerUps();
-  
-    // Create ball trail particles
-    if (balls.length > 0) {
-      createBallTrailParticles(balls[0].x, balls[0].y);
-    }
-  
-    // Update and draw ball trail particles
-    updateBallTrailParticles();
-    drawBallTrailParticles();
-  
-    // Update screen shake
-    updateShake();
-  
-    // Render game elements
-    drawPaddle();
-    drawBall();
-    drawBricks();
-    drawScore();
-    drawLives();
-    drawLevel();
-    drawPowerUps();
-  
-    updateParticles();
-    drawParticles();
-  
-    // Request next frame
-    requestAnimationFrame(gameLoop);
   }
+
+  if (score === brickRowCount * brickColumnCount) {
+    level++;
+    score = 0;
+    // Reset ball position
+    balls = [];
+    createBall();
+    // Reset bricks
+    initializeBricks();
+  }
+
+  updatePowerUps();
+
+  // Create ball trail particles
+  if (balls.length > 0) {
+    createBallTrailParticles(balls[0].x, balls[0].y);
+  }
+
+  // Update and draw ball trail particles
+  updateBallTrailParticles();
+  drawBallTrailParticles();
+
+  // Update screen shake
+  updateShake();
+
+  // Render game elements
+  drawPaddle();
+  drawBall();
+  drawBricks();
+  drawScore();
+  drawLives();
+  drawLevel();
+  drawPowerUps();
+
+  updateParticles();
+  drawParticles();
+
+  // Request next frame
+  requestAnimationFrame(gameLoop);
+}
 
 function drawPaddle() {
   ctx.beginPath();
   ctx.roundRect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight, 5);
-  ctx.fillStyle = '#0095dd';
+  const gradient = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
+  gradient.addColorStop(0, '#0095dd');
+  gradient.addColorStop(1, '#00ffff');
+  ctx.fillStyle = gradient;
   ctx.fill();
+  ctx.strokeStyle = '#005588';
+  ctx.lineWidth = 2;
+  ctx.stroke();
   ctx.closePath();
 }
 
@@ -283,6 +291,9 @@ function drawBall() {
     gradient.addColorStop(1, '#0095dd');
     ctx.fillStyle = gradient;
     ctx.fill();
+    ctx.strokeStyle = '#005588';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.closePath();
   }
 }
@@ -305,6 +316,9 @@ function drawBricks() {
           ctx.fillStyle = '#00ff00';
         }
         ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         ctx.closePath();
       }
     }
@@ -312,21 +326,30 @@ function drawBricks() {
 }
 
 function drawScore() {
-  ctx.font = '20px Arial';
-  ctx.fillStyle = '#0095dd';
-  ctx.fillText(`Score: ${score}`, 8, 25);
+  ctx.font = '24px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`Score: ${score}`, 8, 30);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  ctx.strokeText(`Score: ${score}`, 8, 30);
 }
 
 function drawLives() {
-  ctx.font = '20px Arial';
-  ctx.fillStyle = '#0095dd';
-  ctx.fillText(`Lives: ${lives}`, canvas.width - 80, 25);
+  ctx.font = '24px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`Lives: ${lives}`, canvas.width - 100, 30);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  ctx.strokeText(`Lives: ${lives}`, canvas.width - 100, 30);
 }
 
 function drawLevel() {
-  ctx.font = '20px Arial';
-  ctx.fillStyle = '#0095dd';
-  ctx.fillText(`Level: ${level}`, canvas.width / 2 - 30, 25);
+  ctx.font = '24px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`Level: ${level}`, canvas.width / 2 - 40, 30);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  ctx.strokeText(`Level: ${level}`, canvas.width / 2 - 40, 30);
 }
 
 class Particle {
@@ -395,53 +418,53 @@ function updatePowerUps() {
 }
 
 function activatePowerUp(type) {
-  switch (type) {
+    switch (type) {
     case 0: // Expand Paddle
-      paddleWidth += 20;
-      setTimeout(() => {
-        paddleWidth -= 20;
-      }, 10000);
-      break;
+    paddleWidth += 20;
+    setTimeout(() => {
+    paddleWidth -= 20;
+    }, 10000);
+    break;
     case 1: // Sticky Paddle
-      stickyPaddle = true;
-      setTimeout(() => {
-        stickyPaddle = false;
-      }, 10000);
-      break;
+    stickyPaddle = true;
+    setTimeout(() => {
+    stickyPaddle = false;
+    }, 10000);
+    break;
     case 2: // Multi-Ball
-      if (balls.length === 1) {
-        createBall();
-        createBall();
-      }
-      break;
-  }
-  playSound(powerUpSound);
-}
-
-function drawPowerUps() {
-  for (let i = 0; i < powerUps.length; i++) {
+    if (balls.length === 1) {
+    createBall();
+    createBall();
+    }
+    break;
+    }
+    playSound(powerUpSound);
+    }
+    
+    function drawPowerUps() {
+    for (let i = 0; i < powerUps.length; i++) {
     const powerUp = powerUps[i];
     ctx.beginPath();
     ctx.roundRect(powerUp.x, powerUp.y, powerUpWidth, powerUpHeight, 3);
     ctx.fillStyle = powerUpColors[powerUp.type];
     ctx.fill();
     ctx.closePath();
-  }
-}
-
-function createBall() {
-  const ball = {
+    }
+    }
+    
+    function createBall() {
+    const ball = {
     x: canvas.width / 2,
     y: canvas.height - paddleHeight - ballRadius,
-    speedX: 2,
-    speedY: -2
-  };
-  balls.push(ball);
-  ballX = ball.x;
-  ballY = ball.y;
-}
-
-function playSound(sound) {
+    speedX: 4,
+    speedY: -4
+    };
+    balls.push(ball);
+    ballX = ball.x;
+    ballY = ball.y;
+    }
+    
+    function playSound(sound) {
     if (sound) {
     sound.currentTime = 0;
     sound.play();
