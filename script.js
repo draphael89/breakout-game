@@ -53,14 +53,15 @@ let ballTrailParticles = [];
 let shakeDuration = 0;
 
 function showMainMenu() {
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#fff';
-  ctx.font = '40px Arial';
-  ctx.fillText('Breakout Game', canvas.width / 2 - 100, canvas.height / 2 - 50);
-  ctx.font = '20px Arial';
-  ctx.fillText('Click to Start', canvas.width / 2 - 50, canvas.height / 2 + 50);
-}
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '40px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Breakout Game', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.font = '20px Arial';
+    ctx.fillText('Click to Start', canvas.width / 2, canvas.height / 2 + 50);
+  }
 
 function updatePaddlePosition() {
   paddleX = mouseX - paddleWidth / 2;
