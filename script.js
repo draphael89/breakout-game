@@ -38,6 +38,15 @@ const powerUpHeight = 10;
 const powerUpColors = ['#ff0000', '#00ff00', '#0000ff'];
 let powerUps = [];
 
+let balls = [];
+let stickyPaddle = false;
+let multiBall = false;
+
+let backgroundMusic;
+let brickHitSound;
+let paddleHitSound;
+let powerUpSound;
+
 document.addEventListener('keydown', keyDownHandler, false);
 document.addEventListener('keyup', keyUpHandler, false);
 
@@ -62,7 +71,13 @@ function initializeBricks() {
   for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
-      bricks[c][r] = { x: 0, y: 0, status: 1, powerUp: Math.random() < 0.1 ? Math.floor(Math.random() * 3) : -1 };
+      const brickType = Math.floor(Math.random() * 3) + 1;
+      bricks[c][r] = {
+        x: 0,
+        y: 0,
+        status: brickType,
+        powerUp: Math.random() < 0.1 ? Math.floor(Math.random() * 3) : -1
+      };
     }
   }
 }
@@ -78,58 +93,68 @@ function gameLoop() {
     paddleX -= paddleSpeed;
   }
 
-  ballX += ballSpeedX;
-  ballY += ballSpeedY;
+  for (let i = 0; i < balls.length; i++) {
+    const ball = balls[i];
+    ball.x += ball.speedX;
+    ball.y += ball.speedY;
 
-  if (ballX + ballSpeedX > canvas.width - ballRadius || ballX + ballSpeedX < ballRadius) {
-    ballSpeedX = -ballSpeedX;
-  }
-  if (ballY + ballSpeedY < ballRadius) {
-    ballSpeedY = -ballSpeedY;
-  }
+    if (ball.x + ball.speedX > canvas.width - ballRadius || ball.x + ball.speedX < ballRadius) {
+      ball.speedX = -ball.speedX;
+    }
+    if (ball.y + ball.speedY < ballRadius) {
+      ball.speedY = -ball.speedY;
+    }
 
-  if (ballY + ballSpeedY > canvas.height - ballRadius - paddleHeight) {
-    if (ballX > paddleX && ballX < paddleX + paddleWidth) {
-      ballSpeedY = -ballSpeedY;
-    } else {
-      lives--;
-      if (lives === 0) {
-        // Game over condition
-        alert('Game Over');
-        document.location.reload();
-        clearInterval(interval);
+    if (ball.y + ball.speedY > canvas.height - ballRadius - paddleHeight) {
+      if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
+        ball.speedY = -ball.speedY;
+        playSound(paddleHitSound);
+        if (stickyPaddle) {
+          ball.speedX = 0;
+          ball.speedY = 0;
+        }
       } else {
-        // Reset ball position
-        ballX = canvas.width / 2;
-        ballY = canvas.height - paddleHeight - ballRadius;
-        ballSpeedX = 2;
-        ballSpeedY = -2;
-        paddleX = (canvas.width - paddleWidth) / 2;
+        balls.splice(i, 1);
+        i--;
+        if (balls.length === 0) {
+          lives--;
+          if (lives === 0) {
+            // Game over condition
+            alert('Game Over');
+            document.location.reload();
+            clearInterval(interval);
+          } else {
+            // Reset ball position
+            createBall();
+          }
+        }
       }
     }
-  }
 
-  for (let c = 0; c < brickColumnCount; c++) {
-    for (let r = 0; r < brickRowCount; r++) {
-      const brick = bricks[c][r];
-      if (brick.status === 1) {
-        if (
-          ballX > brick.x &&
-          ballX < brick.x + brickWidth &&
-          ballY > brick.y &&
-          ballY < brick.y + brickHeight
-        ) {
-          ballSpeedY = -ballSpeedY;
-          brick.status = 0;
-          score++;
-          createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
-
-          if (brick.powerUp !== -1) {
-            powerUps.push({
-              x: brick.x + brickWidth / 2 - powerUpWidth / 2,
-              y: brick.y + brickHeight / 2 - powerUpHeight / 2,
-              type: brick.powerUp
-            });
+    for (let c = 0; c < brickColumnCount; c++) {
+      for (let r = 0; r < brickRowCount; r++) {
+        const brick = bricks[c][r];
+        if (brick.status > 0) {
+          if (
+            ball.x > brick.x &&
+            ball.x < brick.x + brickWidth &&
+            ball.y > brick.y &&
+            ball.y < brick.y + brickHeight
+          ) {
+            ball.speedY = -ball.speedY;
+            brick.status--;
+            if (brick.status === 0) {
+              score++;
+              createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
+              if (brick.powerUp !== -1) {
+                powerUps.push({
+                  x: brick.x + brickWidth / 2 - powerUpWidth / 2,
+                  y: brick.y + brickHeight / 2 - powerUpHeight / 2,
+                  type: brick.powerUp
+                });
+              }
+            }
+            playSound(brickHitSound);
           }
         }
       }
@@ -140,11 +165,8 @@ function gameLoop() {
     level++;
     score = 0;
     // Reset ball position
-    ballX = canvas.width / 2;
-    ballY = canvas.height - paddleHeight - ballRadius;
-    ballSpeedX = 2;
-    ballSpeedY = -2;
-    paddleX = (canvas.width - paddleWidth) / 2;
+    balls = [];
+    createBall();
     // Reset bricks
     initializeBricks();
   }
@@ -176,24 +198,33 @@ function drawPaddle() {
 }
 
 function drawBall() {
-  ctx.beginPath();
-  ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = '#0095dd';
-  ctx.fill();
-  ctx.closePath();
+  for (let i = 0; i < balls.length; i++) {
+    const ball = balls[i];
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#0095dd';
+    ctx.fill();
+    ctx.closePath();
+  }
 }
 
 function drawBricks() {
   for (let c = 0; c < brickColumnCount; c++) {
     for (let r = 0; r < brickRowCount; r++) {
-      if (bricks[c][r].status === 1) {
+      if (bricks[c][r].status > 0) {
         const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
         const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
         bricks[c][r].x = brickX;
         bricks[c][r].y = brickY;
         ctx.beginPath();
         ctx.rect(brickX, brickY, brickWidth, brickHeight);
-        ctx.fillStyle = '#0095dd';
+        if (bricks[c][r].status === 1) {
+          ctx.fillStyle = '#0095dd';
+        } else if (bricks[c][r].status === 2) {
+          ctx.fillStyle = '#ff0000';
+        } else if (bricks[c][r].status === 3) {
+          ctx.fillStyle = '#00ff00';
+        }
         ctx.fill();
         ctx.closePath();
       }
@@ -288,14 +319,22 @@ function activatePowerUp(type) {
   switch (type) {
     case 0: // Expand Paddle
       paddleWidth += 20;
+      setTimeout(() => {
+        paddleWidth -= 20;
+      }, 10000);
       break;
     case 1: // Sticky Paddle
-      // Implement sticky paddle logic
+      stickyPaddle = true;
+      setTimeout(() => {
+        stickyPaddle = false;
+      }, 10000);
       break;
     case 2: // Multi-Ball
-      // Implement multi-ball logic
+      createBall();
+      createBall();
       break;
   }
+  playSound(powerUpSound);
 }
 
 function drawPowerUps() {
@@ -309,5 +348,58 @@ function drawPowerUps() {
   }
 }
 
+function createBall() {
+  const ball = {
+    x: canvas.width / 2,
+    y: canvas.height - paddleHeight - ballRadius,
+    speedX: 2,
+    speedY: -2
+  };
+  balls.push(ball);
+}
+
+function playSound(sound) {
+  if (sound) {
+    sound.currentTime = 0;
+    sound.play();
+  }
+}
+
+function generateSound(duration, frequency) {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.type = 'square';
+  oscillator.frequency.value = frequency;
+
+  gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+  oscillator.start(audioCtx.currentTime);
+  oscillator.stop(audioCtx.currentTime + duration);
+
+  return {
+    play: function() {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+  };
+}
+
+function initSounds() {
+  backgroundMusic = generateSound(2, 200);
+  brickHitSound = generateSound(0.1, 500);
+  paddleHitSound = generateSound(0.1, 300);
+  powerUpSound = generateSound(0.5, 1000);
+}
+
+initSounds();
 initializeBricks();
+createBall();
+playSound(backgroundMusic);
 gameLoop();
