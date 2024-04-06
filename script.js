@@ -4,10 +4,12 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
-let paddleWidth, paddleHeight, paddleX;
+const paddleWidth = 100;
+const paddleHeight = 10;
 const paddleSpeed = 5;
+let paddleX = (canvas.width - paddleWidth) / 2;
 
-let ballRadius;
+const ballRadius = 5;
 let ballX = canvas.width / 2;
 let ballY = canvas.height - paddleHeight - ballRadius;
 let ballSpeedX = 2;
@@ -15,7 +17,8 @@ let ballSpeedY = -2;
 
 const brickRowCount = 5;
 const brickColumnCount = 9;
-let brickWidth, brickHeight;
+const brickWidth = 70;
+const brickHeight = 20;
 const brickPadding = 10;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
@@ -29,56 +32,7 @@ let level = 1;
 let rightPressed = false;
 let leftPressed = false;
 
-const paddleImage = new Image();
-paddleImage.src = 'images/paddle.png';
-
-const ballImage = new Image();
-ballImage.src = 'images/ball.png';
-
-const brickImage = new Image();
-brickImage.src = 'images/brick.png';
-
-const backgroundImage = new Image();
-backgroundImage.src = 'images/background.jpg';
-
 const particles = [];
-
-let loadedImages = 0;
-const totalImages = 4;
-
-paddleImage.onload = function() {
-  paddleWidth = paddleImage.width;
-  paddleHeight = paddleImage.height;
-  paddleX = (canvas.width - paddleWidth) / 2;
-  loadedImages++;
-  if (loadedImages === totalImages) {
-    startGame();
-  }
-};
-
-ballImage.onload = function() {
-  ballRadius = ballImage.width / 2;
-  loadedImages++;
-  if (loadedImages === totalImages) {
-    startGame();
-  }
-};
-
-brickImage.onload = function() {
-  brickWidth = brickImage.width;
-  brickHeight = brickImage.height;
-  loadedImages++;
-  if (loadedImages === totalImages) {
-    startGame();
-  }
-};
-
-backgroundImage.onload = function() {
-  loadedImages++;
-  if (loadedImages === totalImages) {
-    startGame();
-  }
-};
 
 document.addEventListener('keydown', keyDownHandler, false);
 document.addEventListener('keyup', keyUpHandler, false);
@@ -112,9 +66,6 @@ function initializeBricks() {
 function gameLoop() {
   // Clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw the background image
-  ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
   // Update game state
   if (rightPressed && paddleX < canvas.width - paddleWidth) {
@@ -202,11 +153,19 @@ function gameLoop() {
 }
 
 function drawPaddle() {
-  ctx.drawImage(paddleImage, paddleX, canvas.height - paddleHeight);
+  ctx.beginPath();
+  ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+  ctx.fillStyle = '#0095dd';
+  ctx.fill();
+  ctx.closePath();
 }
 
 function drawBall() {
-  ctx.drawImage(ballImage, ballX - ballRadius, ballY - ballRadius);
+  ctx.beginPath();
+  ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+  ctx.fillStyle = '#0095dd';
+  ctx.fill();
+  ctx.closePath();
 }
 
 function drawBricks() {
@@ -217,7 +176,11 @@ function drawBricks() {
         const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
         bricks[c][r].x = brickX;
         bricks[c][r].y = brickY;
-        ctx.drawImage(brickImage, brickX, brickY);
+        ctx.beginPath();
+        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+        ctx.fillStyle = '#0095dd';
+        ctx.fill();
+        ctx.closePath();
       }
     }
   }
@@ -288,7 +251,5 @@ function drawParticles() {
   }
 }
 
-function startGame() {
-  initializeBricks();
-  gameLoop();
-}
+initializeBricks();
+gameLoop();
