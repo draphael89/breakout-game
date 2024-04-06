@@ -145,126 +145,125 @@ function initializeBricks() {
 }
 
 function gameLoop() {
-  // Clear the canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (gameState === 'menu') {
-    showMainMenu();
-    return;
-  }
-
-  // Update game state
-  updatePaddlePosition();
-  updateBallSpeed();
-
-  for (let i = 0; i < balls.length; i++) {
-    const ball = balls[i];
-    ball.x += ball.speedX;
-    ball.y += ball.speedY;
-
-    if (ball.x + ball.speedX > canvas.width - ballRadius || ball.x + ball.speedX < ballRadius) {
-      ball.speedX = -ball.speedX;
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+    if (gameState === 'menu') {
+      showMainMenu();
+      requestAnimationFrame(gameLoop); // Add this line
+      return;
     }
-    if (ball.y + ball.speedY < ballRadius) {
-      ball.speedY = -ball.speedY;
-    }
-
-    if (ball.y + ball.speedY > canvas.height - ballRadius - paddleHeight) {
-      if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
+  
+    // Update game state
+    updatePaddlePosition();
+    updateBallSpeed();
+  
+    for (let i = 0; i < balls.length; i++) {
+      const ball = balls[i];
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
+  
+      if (ball.x + ball.speedX > canvas.width - ballRadius || ball.x + ball.speedX < ballRadius) {
+        ball.speedX = -ball.speedX;
+      }
+      if (ball.y + ball.speedY < ballRadius) {
         ball.speedY = -ball.speedY;
-        playSound(paddleHitSound);
-        if (stickyPaddle) {
-          ball.speedX = 0;
-          ball.speedY = 0;
-        }
-      } else {
-        balls.splice(i, 1);
-        i--;
-        if (balls.length === 0) {
-          lives--;
-          if (lives === 0) {
-            // Game over condition
-            alert('Game Over');
-            document.location.reload();
-            clearInterval(interval);
-          } else {
-            // Reset ball position
-            createBall();
+      }
+  
+      if (ball.y + ball.speedY > canvas.height - ballRadius - paddleHeight) {
+        if (ball.x > paddleX && ball.x < paddleX + paddleWidth) {
+          ball.speedY = -ball.speedY;
+          playSound(paddleHitSound);
+          if (stickyPaddle) {
+            ball.speedX = 0;
+            ball.speedY = 0;
           }
+        } else {
+          balls.splice(i, 1);
+          i--;
+          if (balls.length === 0) {
+            lives--;
+            if (lives === 0) {
+              // Game over condition
+              alert('Game Over');
+              document.location.reload();
+              clearInterval(interval);
+            } else {
+              // Reset ball position
+              createBall();
+            }        }
         }
       }
-    }
-
-    for (let c = 0; c < brickColumnCount; c++) {
-      for (let r = 0; r < brickRowCount; r++) {
-        const brick = bricks[c][r];
-        if (brick.status > 0) {
-          if (
-            ball.x > brick.x &&
-            ball.x < brick.x + brickWidth &&
-            ball.y > brick.y &&
-            ball.y < brick.y + brickHeight
-          ) {
-            ball.speedY = -ball.speedY;
-            brick.status--;
-            if (brick.status === 0) {
-              score++;
-              createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
-              if (brick.powerUp !== -1) {
-                powerUps.push({
-                  x: brick.x + brickWidth / 2 - powerUpWidth / 2,
-                  y: brick.y + brickHeight / 2 - powerUpHeight / 2,
-                  type: brick.powerUp
-                });
+  
+      for (let c = 0; c < brickColumnCount; c++) {
+        for (let r = 0; r < brickRowCount; r++) {
+          const brick = bricks[c][r];
+          if (brick.status > 0) {
+            if (
+              ball.x > brick.x &&
+              ball.x < brick.x + brickWidth &&
+              ball.y > brick.y &&
+              ball.y < brick.y + brickHeight
+            ) {
+              ball.speedY = -ball.speedY;
+              brick.status--;
+              if (brick.status === 0) {
+                score++;
+                createParticles(brick.x + brickWidth / 2, brick.y + brickHeight / 2);
+                if (brick.powerUp !== -1) {
+                  powerUps.push({
+                    x: brick.x + brickWidth / 2 - powerUpWidth / 2,
+                    y: brick.y + brickHeight / 2 - powerUpHeight / 2,
+                    type: brick.powerUp
+                  });
+                }
               }
+              playSound(brickHitSound);
+              shakeScreen();
             }
-            playSound(brickHitSound);
-            shakeScreen();
-          }
-        }
+          }      }
       }
     }
+  
+    if (score === brickRowCount * brickColumnCount) {
+      level++;
+      score = 0;
+      // Reset ball position
+      balls = [];
+      createBall();
+      // Reset bricks
+      initializeBricks();
+    }
+  
+    updatePowerUps();
+  
+    // Create ball trail particles
+    if (balls.length > 0) {
+      createBallTrailParticles(balls[0].x, balls[0].y);
+    }
+  
+    // Update and draw ball trail particles
+    updateBallTrailParticles();
+    drawBallTrailParticles();
+  
+    // Update screen shake
+    updateShake();
+  
+    // Render game elements
+    drawPaddle();
+    drawBall();
+    drawBricks();
+    drawScore();
+    drawLives();
+    drawLevel();
+    drawPowerUps();
+  
+    updateParticles();
+    drawParticles();
+  
+    // Request next frame
+    requestAnimationFrame(gameLoop);
   }
-
-  if (score === brickRowCount * brickColumnCount) {
-    level++;
-    score = 0;
-    // Reset ball position
-    balls = [];
-    createBall();
-    // Reset bricks
-    initializeBricks();
-  }
-
-  updatePowerUps();
-
-  // Create ball trail particles
-  if (balls.length > 0) {
-    createBallTrailParticles(balls[0].x, balls[0].y);
-  }
-
-  // Update and draw ball trail particles
-  updateBallTrailParticles();
-  drawBallTrailParticles();
-
-  // Update screen shake
-  updateShake();
-
-  // Render game elements
-  drawPaddle();
-  drawBall();
-  drawBricks();
-  drawScore();
-  drawLives();
-  drawLevel();
-  drawPowerUps();
-
-  updateParticles();
-  drawParticles();
-
-  // Request next frame
-  requestAnimationFrame(gameLoop);
-}
 
 function drawPaddle() {
   ctx.beginPath();
