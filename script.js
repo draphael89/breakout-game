@@ -44,7 +44,7 @@ ballImage.onload = function() {
 };
 
 const brickImage = new Image();
-brickImage.src = 'image/brick.png';
+brickImage.src = 'images/brick.png';
 brickImage.onload = function() {
   brickWidth = brickImage.width;
   brickHeight = brickImage.height;
