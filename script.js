@@ -1,27 +1,45 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-canvas.width = 800;
-canvas.height = 600;
+// Set canvas dimensions based on the device's screen size
+function resizeCanvas() {
+  const maxWidth = window.innerWidth * 0.9;
+  const maxHeight = window.innerHeight * 0.9;
+  const aspectRatio = 800 / 600;
 
-const paddleWidth = 100;
-const paddleHeight = 10;
-const paddleSpeed = 5;
+  let width = maxWidth;
+  let height = width / aspectRatio;
+
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * aspectRatio;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const paddleWidth = canvas.width * 0.15;
+const paddleHeight = canvas.height * 0.02;
+const paddleSpeed = canvas.width * 0.01;
 let paddleX = (canvas.width - paddleWidth) / 2;
 
-const ballRadius = 5;
+const ballRadius = canvas.width * 0.01;
 let ballX = canvas.width / 2;
 let ballY = canvas.height - paddleHeight - ballRadius;
-let ballSpeedX = 4;
-let ballSpeedY = -4;
+let ballSpeedX = canvas.width * 0.005;
+let ballSpeedY = -canvas.height * 0.005;
 
 const brickRowCount = 5;
 const brickColumnCount = 9;
-const brickWidth = 70;
-const brickHeight = 20;
-const brickPadding = 10;
-const brickOffsetTop = 30;
-const brickOffsetLeft = 30;
+const brickWidth = canvas.width * 0.08;
+const brickHeight = canvas.height * 0.03;
+const brickPadding = canvas.width * 0.01;
+const brickOffsetTop = canvas.height * 0.05;
+const brickOffsetLeft = canvas.width * 0.03;
 
 let bricks = [];
 let score = 0;
@@ -33,8 +51,8 @@ let leftPressed = false;
 
 const particles = [];
 
-const powerUpWidth = 40;
-const powerUpHeight = 10;
+const powerUpWidth = canvas.width * 0.05;
+const powerUpHeight = canvas.height * 0.02;
 const powerUpColors = ['#ff0000', '#00ff00', '#0000ff'];
 let powerUps = [];
 
@@ -48,7 +66,7 @@ let paddleHitSound;
 let powerUpSound;
 
 let gameState = 'menu';
-let mouseX = 0;
+let touchX = 0;
 let ballTrailParticles = [];
 let shakeDuration = 0;
 
@@ -56,21 +74,21 @@ function showMainMenu() {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#fff';
-  ctx.font = '40px Arial';
+  ctx.font = `${canvas.width * 0.05}px Arial`;
   ctx.textAlign = 'center';
-  ctx.fillText('Breakout Game', canvas.width / 2, canvas.height / 2 - 50);
-  ctx.font = '20px Arial';
-  ctx.fillText('Click to Start', canvas.width / 2, canvas.height / 2 + 50);
+  ctx.fillText('Breakout Game', canvas.width / 2, canvas.height / 2 - canvas.height * 0.1);
+  ctx.font = `${canvas.width * 0.03}px Arial`;
+  ctx.fillText('Tap to Start', canvas.width / 2, canvas.height / 2 + canvas.height * 0.1);
 }
 
 function updatePaddlePosition() {
-  paddleX = mouseX - paddleWidth / 2;
+  paddleX = touchX - paddleWidth / 2;
   paddleX = Math.max(0, Math.min(paddleX, canvas.width - paddleWidth));
 }
 
 function updateBallSpeed() {
-  const maxSpeed = 8;
-  const speedIncrease = 0.02;
+  const maxSpeed = canvas.width * 0.01;
+  const speedIncrease = canvas.width * 0.0002;
   ballSpeedX += speedIncrease * Math.sign(ballSpeedX);
   ballSpeedY += speedIncrease * Math.sign(ballSpeedY);
   ballSpeedX = Math.min(maxSpeed, Math.max(-maxSpeed, ballSpeedX));
@@ -119,7 +137,7 @@ function shakeScreen() {
 function updateShake() {
   if (shakeDuration > 0) {
     shakeDuration -= 1 / 60;
-    const shakeIntensity = 5;
+    const shakeIntensity = canvas.width * 0.005;
     const shakeX = Math.random() * shakeIntensity * 2 - shakeIntensity;
     const shakeY = Math.random() * shakeIntensity * 2 - shakeIntensity;
     canvas.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
@@ -326,46 +344,46 @@ function drawBricks() {
 }
 
 function drawScore() {
-  ctx.font = '24px Arial';
+  ctx.font = `${canvas.width * 0.03}px Arial`;
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(`Score: ${score}`, 8, 30);
+  ctx.fillText(`Score: ${score}`, canvas.width * 0.02, canvas.height * 0.05);
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 1;
-  ctx.strokeText(`Score: ${score}`, 8, 30);
+  ctx.strokeText(`Score: ${score}`, canvas.width * 0.02, canvas.height * 0.05);
 }
 
 function drawLives() {
-  ctx.font = '24px Arial';
+  ctx.font = `${canvas.width * 0.03}px Arial`;
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(`Lives: ${lives}`, canvas.width - 100, 30);
+  ctx.fillText(`Lives: ${lives}`, canvas.width - canvas.width * 0.1, canvas.height * 0.05);
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 1;
-  ctx.strokeText(`Lives: ${lives}`, canvas.width - 100, 30);
+  ctx.strokeText(`Lives: ${lives}`, canvas.width - canvas.width * 0.1, canvas.height * 0.05);
 }
 
 function drawLevel() {
-  ctx.font = '24px Arial';
+  ctx.font = `${canvas.width * 0.03}px Arial`;
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(`Level: ${level}`, canvas.width / 2 - 40, 30);
+  ctx.fillText(`Level: ${level}`, canvas.width / 2 - canvas.width * 0.05, canvas.height * 0.05);
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 1;
-  ctx.strokeText(`Level: ${level}`, canvas.width / 2 - 40, 30);
+  ctx.strokeText(`Level: ${level}`, canvas.width / 2 - canvas.width * 0.05, canvas.height * 0.05);
 }
 
 class Particle {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.radius = Math.random() * 5 + 1;
-    this.speedX = Math.random() * 3 - 1.5;
-    this.speedY = Math.random() * 3 - 1.5;
+    this.radius = Math.random() * canvas.width * 0.005 + canvas.width * 0.002;
+    this.speedX = Math.random() * canvas.width * 0.003 - canvas.width * 0.0015;
+    this.speedY = Math.random() * canvas.width * 0.003 - canvas.width * 0.0015;
     this.color = 'rgba(255, 0, 0, 0.5)';
   }
 
   update() {
     this.x += this.speedX;
     this.y += this.speedY;
-    this.radius -= 0.05;
+    this.radius -= canvas.width * 0.0001;
   }
 
   draw() {
@@ -402,7 +420,7 @@ function drawParticles() {
 function updatePowerUps() {
   for (let i = powerUps.length - 1; i >= 0; i--) {
     const powerUp = powerUps[i];
-    powerUp.y += 2;
+    powerUp.y += canvas.height * 0.003;
 
     if (
       powerUp.y > canvas.height - paddleHeight &&
@@ -418,115 +436,128 @@ function updatePowerUps() {
 }
 
 function activatePowerUp(type) {
-    switch (type) {
+  switch (type) {
     case 0: // Expand Paddle
-    paddleWidth += 20;
-    setTimeout(() => {
-    paddleWidth -= 20;
-    }, 10000);
-    break;
+      paddleWidth += canvas.width * 0.03;
+      setTimeout(() => {
+        paddleWidth -= canvas.width * 0.03;
+      }, 10000);
+      break;
     case 1: // Sticky Paddle
-    stickyPaddle = true;
-    setTimeout(() => {
-    stickyPaddle = false;
-    }, 10000);
-    break;
+      stickyPaddle = true;
+      setTimeout(() => {
+        stickyPaddle = false;
+      }, 10000);
+      break;
     case 2: // Multi-Ball
-    if (balls.length === 1) {
-    createBall();
-    createBall();
-    }
-    break;
-    }
-    playSound(powerUpSound);
-    }
-    
-    function drawPowerUps() {
-    for (let i = 0; i < powerUps.length; i++) {
+      if (balls.length === 1) {
+        createBall();
+        createBall();
+      }
+      break;
+  }
+  playSound(powerUpSound);
+}
+
+function drawPowerUps() {
+  for (let i = 0; i < powerUps.length; i++) {
     const powerUp = powerUps[i];
     ctx.beginPath();
     ctx.roundRect(powerUp.x, powerUp.y, powerUpWidth, powerUpHeight, 3);
     ctx.fillStyle = powerUpColors[powerUp.type];
     ctx.fill();
     ctx.closePath();
-    }
-    }
-    
-    function createBall() {
-    const ball = {
+  }
+}
+
+function createBall() {
+  const ball = {
     x: canvas.width / 2,
     y: canvas.height - paddleHeight - ballRadius,
-    speedX: 4,
-    speedY: -4
-    };
-    balls.push(ball);
-    ballX = ball.x;
-    ballY = ball.y;
-    }
-    
-    function playSound(sound) {
-    if (sound) {
+    speedX: canvas.width * 0.005,
+    speedY: -canvas.height * 0.005
+  };
+  balls.push(ball);
+  ballX = ball.x;
+  ballY = ball.y;
+}
+
+function playSound(sound) {
+  if (sound) {
     sound.currentTime = 0;
     sound.play();
-    }
-    }
-    
-    function generateSound(duration, frequency) {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    
-    oscillator.type = 'square';
-    oscillator.frequency.value = frequency;
-    
-    gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    
-    oscillator.start(audioCtx.currentTime);
-    oscillator.stop(audioCtx.currentTime + duration);
-    
-    return {
+  }
+}
+
+function generateSound(duration, frequency) {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.type = 'square';
+  oscillator.frequency.value = frequency;
+
+  gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+  oscillator.start(audioCtx.currentTime);
+  oscillator.stop(audioCtx.currentTime + duration);
+
+  return {
     play: function() {
-    if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
     }
-    }
-    };
-    }
-    
-    function initSounds() {
-    backgroundMusic = generateSound(2, 200);
-    brickHitSound = generateSound(0.1, 500);
-    paddleHitSound = generateSound(0.1, 300);
-    powerUpSound = generateSound(0.5, 1000);
-    
-    // Loop the background music
-    backgroundMusic.onended = function() {
+  };
+}
+
+function initSounds() {
+  backgroundMusic = generateSound(2, 200);
+  brickHitSound = generateSound(0.1, 500);
+  paddleHitSound = generateSound(0.1, 300);
+  powerUpSound = generateSound(0.5, 1000);
+
+  // Loop the background music
+  backgroundMusic.onended = function() {
     this.currentTime = 0;
     this.play();
-    };
-    }
-    
-    function startGame() {
-    gameState = 'play';
-    initializeBricks();
-    createBall();
-    playSound(backgroundMusic);
-    }
-    
-    canvas.addEventListener('mousemove', function(event) {
-    const rect = canvas.getBoundingClientRect();
-    mouseX = event.clientX - rect.left;
-    });
-    
-    canvas.addEventListener('click', function() {
-    if (gameState === 'menu') {
+  };
+}
+
+function startGame() {
+  gameState = 'play';
+  initializeBricks();
+  createBall();
+  playSound(backgroundMusic);
+}
+
+canvas.addEventListener('touchstart', function(event) {
+  event.preventDefault();
+  touchX = event.touches[0].clientX - canvas.getBoundingClientRect().left;
+  if (gameState === 'menu') {
     startGame();
-    }
-    });
-    
-    initSounds();
-    gameLoop();
+  }
+});
+
+canvas.addEventListener('touchmove', function(event) {
+  event.preventDefault();
+  touchX = event.touches[0].clientX - canvas.getBoundingClientRect().left;
+});
+
+canvas.addEventListener('mousemove', function(event) {
+  const rect = canvas.getBoundingClientRect();
+  touchX = event.clientX - rect.left;
+});
+
+canvas.addEventListener('click', function() {
+  if (gameState === 'menu') {
+    startGame();
+  }
+});
+
+initSounds();
+gameLoop();
