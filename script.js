@@ -20,7 +20,7 @@ const brickPadding = 10;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
 
-const bricks = [];
+let bricks = [];
 
 let score = 0;
 let lives = 3;
@@ -76,6 +76,7 @@ function keyUpHandler(e) {
 }
 
 function initializeBricks() {
+  bricks = [];
   for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
