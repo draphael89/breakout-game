@@ -31,30 +31,54 @@ let leftPressed = false;
 
 const paddleImage = new Image();
 paddleImage.src = 'images/paddle.png';
-paddleImage.onload = function() {
-  paddleWidth = paddleImage.width;
-  paddleHeight = paddleImage.height;
-  paddleX = (canvas.width - paddleWidth) / 2;
-};
 
 const ballImage = new Image();
 ballImage.src = 'images/ball.png';
-ballImage.onload = function() {
-  ballRadius = ballImage.width / 2;
-};
 
 const brickImage = new Image();
 brickImage.src = 'images/brick.png';
-brickImage.onload = function() {
-  brickWidth = brickImage.width;
-  brickHeight = brickImage.height;
-  initializeBricks();
-};
 
 const backgroundImage = new Image();
 backgroundImage.src = 'images/background.jpg';
 
 const particles = [];
+
+let loadedImages = 0;
+const totalImages = 4;
+
+paddleImage.onload = function() {
+  paddleWidth = paddleImage.width;
+  paddleHeight = paddleImage.height;
+  paddleX = (canvas.width - paddleWidth) / 2;
+  loadedImages++;
+  if (loadedImages === totalImages) {
+    startGame();
+  }
+};
+
+ballImage.onload = function() {
+  ballRadius = ballImage.width / 2;
+  loadedImages++;
+  if (loadedImages === totalImages) {
+    startGame();
+  }
+};
+
+brickImage.onload = function() {
+  brickWidth = brickImage.width;
+  brickHeight = brickImage.height;
+  loadedImages++;
+  if (loadedImages === totalImages) {
+    startGame();
+  }
+};
+
+backgroundImage.onload = function() {
+  loadedImages++;
+  if (loadedImages === totalImages) {
+    startGame();
+  }
+};
 
 document.addEventListener('keydown', keyDownHandler, false);
 document.addEventListener('keyup', keyUpHandler, false);
@@ -264,4 +288,7 @@ function drawParticles() {
   }
 }
 
-gameLoop();
+function startGame() {
+  initializeBricks();
+  gameLoop();
+}
