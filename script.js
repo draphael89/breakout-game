@@ -238,7 +238,9 @@ function gameLoop() {
   updatePowerUps();
 
   // Create ball trail particles
-  createBallTrailParticles(ballX, ballY);
+  if (balls.length > 0) {
+    createBallTrailParticles(balls[0].x, balls[0].y);
+  }
 
   // Update and draw ball trail particles
   updateBallTrailParticles();
@@ -435,71 +437,73 @@ function createBall() {
     speedY: -2
   };
   balls.push(ball);
+  ballX = ball.x;
+  ballY = ball.y;
 }
 
 function playSound(sound) {
-  if (sound) {
+    if (sound) {
     sound.currentTime = 0;
     sound.play();
-  }
-}
-
-function generateSound(duration, frequency) {
+    }
+    }
+    
+    function generateSound(duration, frequency) {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-  
+    
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-  
+    
     oscillator.type = 'square';
     oscillator.frequency.value = frequency;
-  
+    
     gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  
+    
     oscillator.start(audioCtx.currentTime);
     oscillator.stop(audioCtx.currentTime + duration);
-  
+    
     return {
-      play: function() {
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-      }
+    play: function() {
+    if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+    }
+    }
     };
-  }
-  
-  function initSounds() {
+    }
+    
+    function initSounds() {
     backgroundMusic = generateSound(2, 200);
     brickHitSound = generateSound(0.1, 500);
     paddleHitSound = generateSound(0.1, 300);
     powerUpSound = generateSound(0.5, 1000);
-  
+    
     // Loop the background music
     backgroundMusic.onended = function() {
-      this.currentTime = 0;
-      this.play();
+    this.currentTime = 0;
+    this.play();
     };
-  }
-  
-  function startGame() {
+    }
+    
+    function startGame() {
     gameState = 'play';
     initializeBricks();
     createBall();
     playSound(backgroundMusic);
-  }
-  
-  canvas.addEventListener('mousemove', function(event) {
+    }
+    
+    canvas.addEventListener('mousemove', function(event) {
     const rect = canvas.getBoundingClientRect();
     mouseX = event.clientX - rect.left;
-  });
-  
-  canvas.addEventListener('click', function() {
+    });
+    
+    canvas.addEventListener('click', function() {
     if (gameState === 'menu') {
-      startGame();
+    startGame();
     }
-  });
-  
-  initSounds();
-  gameLoop();
+    });
+    
+    initSounds();
+    gameLoop();
