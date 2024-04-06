@@ -191,7 +191,7 @@ function gameLoop() {
 
 function drawPaddle() {
   ctx.beginPath();
-  ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+  ctx.roundRect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight, 5);
   ctx.fillStyle = '#0095dd';
   ctx.fill();
   ctx.closePath();
@@ -202,7 +202,10 @@ function drawBall() {
     const ball = balls[i];
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#0095dd';
+    const gradient = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, ballRadius);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(1, '#0095dd');
+    ctx.fillStyle = gradient;
     ctx.fill();
     ctx.closePath();
   }
@@ -217,7 +220,7 @@ function drawBricks() {
         bricks[c][r].x = brickX;
         bricks[c][r].y = brickY;
         ctx.beginPath();
-        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+        ctx.roundRect(brickX, brickY, brickWidth, brickHeight, 3);
         if (bricks[c][r].status === 1) {
           ctx.fillStyle = '#0095dd';
         } else if (bricks[c][r].status === 2) {
@@ -233,21 +236,21 @@ function drawBricks() {
 }
 
 function drawScore() {
-  ctx.font = '16px Arial';
+  ctx.font = '20px Arial';
   ctx.fillStyle = '#0095dd';
-  ctx.fillText(`Score: ${score}`, 8, 20);
+  ctx.fillText(`Score: ${score}`, 8, 25);
 }
 
 function drawLives() {
-  ctx.font = '16px Arial';
+  ctx.font = '20px Arial';
   ctx.fillStyle = '#0095dd';
-  ctx.fillText(`Lives: ${lives}`, canvas.width - 65, 20);
+  ctx.fillText(`Lives: ${lives}`, canvas.width - 80, 25);
 }
 
 function drawLevel() {
-  ctx.font = '16px Arial';
+  ctx.font = '20px Arial';
   ctx.fillStyle = '#0095dd';
-  ctx.fillText(`Level: ${level}`, canvas.width / 2 - 20, 20);
+  ctx.fillText(`Level: ${level}`, canvas.width / 2 - 30, 25);
 }
 
 class Particle {
@@ -330,8 +333,10 @@ function activatePowerUp(type) {
       }, 10000);
       break;
     case 2: // Multi-Ball
-      createBall();
-      createBall();
+      if (balls.length === 1) {
+        createBall();
+        createBall();
+      }
       break;
   }
   playSound(powerUpSound);
@@ -341,7 +346,7 @@ function drawPowerUps() {
   for (let i = 0; i < powerUps.length; i++) {
     const powerUp = powerUps[i];
     ctx.beginPath();
-    ctx.rect(powerUp.x, powerUp.y, powerUpWidth, powerUpHeight);
+    ctx.roundRect(powerUp.x, powerUp.y, powerUpWidth, powerUpHeight, 3);
     ctx.fillStyle = powerUpColors[powerUp.type];
     ctx.fill();
     ctx.closePath();
@@ -396,6 +401,12 @@ function initSounds() {
   brickHitSound = generateSound(0.1, 500);
   paddleHitSound = generateSound(0.1, 300);
   powerUpSound = generateSound(0.5, 1000);
+
+  // Loop the background music
+  backgroundMusic.onended = function() {
+    this.currentTime = 0;
+    this.play();
+  };
 }
 
 initSounds();
